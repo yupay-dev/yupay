@@ -1,0 +1,26 @@
+# Configuración general del dominio de Ventas
+name: "Sales ERP"
+
+generation:
+  rows: 50000
+  format: "csv"
+
+entities:
+  customers:
+    type: "individual"
+    fields:
+      id: "uuid"
+      email_domains: ["gmail.com", "outlook.com", "yahoo.com", "hotmail.com"]
+      email_weights: [0.6, 0.2, 0.1, 0.1]
+    
+  products:
+    price_range: [10, 1500]
+    
+  orders:
+    date_range: ["2023-01-01", "2025-12-31"]
+    items_per_order: [1, 10]
+    payment_methods:
+      "Credit Card": 0.5
+      "Debit Card": 0.3
+      "Cash": 0.1
+      "Transfer": 0.1

@@ -1,0 +1,17 @@
+Electronics:
+  brands: ["Samsung", "LG", "Sony", "Apple", "Xiaomi"]
+  adjectives: ["Smart", "Pro", "Ultra", "Lite", "Max"]
+  nouns: ["TV", "Phone", "Laptop", "Watch", "Tablet"]
+  price_factor: 1.5
+
+Home:
+  brands: ["IKEA", "Philips", "Bosch", "Oster", "Tramontina"]
+  adjectives: ["Ergonomic", "Wooden", "Steel", "Comfort", "Modern"]
+  nouns: ["Chair", "Table", "Lamp", "Mixer", "Desk"]
+  price_factor: 0.8
+
+Fashion:
+  brands: ["Zara", "H&M", "Nike", "Adidas", "Levi's"]
+  adjectives: ["Casual", "Slim", "Vintage", "Urban", "Sport"]
+  nouns: ["Shirt", "Pants", "Jacket", "Shoes", "Hat"]
+  price_factor: 0.5

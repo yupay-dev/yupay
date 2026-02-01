@@ -1,0 +1,40 @@
+first_names:
+  male:
+    - Juan
+    - Luis
+    - Jose
+    - Carlos
+    - Manuel
+    - Pedro
+    - Jorge
+    - Miguel
+    - David
+    - Fernando
+  female:
+    - Maria
+    - Ana
+    - Rosa
+    - Carmen
+    - Elizabeth
+    - Patricia
+    - Diana
+    - Lucia
+    - Sofia
+    - Elena
+
+last_names:
+  - Quispe
+  - Flores
+  - Sanchez
+  - Garcia
+  - Rojas
+  - Diaz
+  - Mamani
+  - Chavez
+  - Torres
+  - Rodriguez
+  - Vasquez
+  - Perez
+  - Gomez
+  - Martinez
+  - Hernandez
