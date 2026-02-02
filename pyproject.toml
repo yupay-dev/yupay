@@ -1,6 +1,6 @@
 [project]
 name = "yupay"
-version = "0.1.0"
+version = "1.0.0"
 description = "Realistic synthetic ERP data generator using Polars"
 authors = [{ name = "Manuel Vasquez" }]
 license = { text = "MIT" }
@@ -9,11 +9,10 @@ requires-python = "==3.14.1"
 dependencies = [
     "polars==1.37.1",
     "pyyaml==6.0.2",
-    "click==8.1.7",
+    "click==8.3.1",
     "pydantic==2.7.0",
-    "psutil==5.9.8",
-    "rich==13.7.0",
-    "duckdb==0.10.0",
+    "rich==14.3.1",
+    "duckdb==1.4.4",
 ]
 
 [project.optional-dependencies]

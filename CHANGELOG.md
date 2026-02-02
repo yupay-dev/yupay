@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.0.0] - 2026-02-02
+### Changed
+- **First Public Release**: Project is out of beta.
+- **I18N**: Added internationalization support (English/Spanish).
+- **Architecture**: Decoupled Registry and CLI.
+- **Dependencies**: Aligned `duckdb` and `click` with production environment.
+- **Documentation**: Added architecture guide and user manual.
+
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
