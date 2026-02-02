@@ -27,6 +27,12 @@ Yupay is a high-performance synthetic data generator designed to simulate realis
 git clone https://github.com/manuelvasquezab/yupay.git
 cd yupay
 
+#Iniciar el entorno virtual
+python -m venv venv
+
+# Activar el entorno virtual
+.\venv\Scripts\activate   
+
 # Install dependencies (Python 3.10+)
 pip install -e .
 ```

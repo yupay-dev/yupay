@@ -10,9 +10,9 @@ dependencies = [
     "polars==1.37.1",
     "pyyaml==6.0.2",
     "click==8.3.1",
-    "pydantic==2.7.0",
     "rich==14.3.1",
     "duckdb==1.4.4",
+    "psutil==7.2.2",
 ]
 
 [project.optional-dependencies]
