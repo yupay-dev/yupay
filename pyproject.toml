@@ -16,6 +16,9 @@ dependencies = [
     "duckdb==0.10.0",
 ]
 
+[project.optional-dependencies]
+dev = ["pytest>=8.0.0", "babel"]
+
 [project.scripts]
 yupay = "yupay.cli:main"
 

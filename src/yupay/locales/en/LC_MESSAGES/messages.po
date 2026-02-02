@@ -1,0 +1,142 @@
+# English translations for PROJECT.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-02-01 23:01-0500\n"
+"PO-Revision-Date: 2026-02-01 23:01-0500\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: src/yupay/cli.py:50
+#, python-brace-format
+msgid "[bold red]Configuration Error:[/bold red] {e}"
+msgstr ""
+
+#: src/yupay/cli.py:73
+msgid "[yellow]Analyzing resources and estimating volume...[/yellow]"
+msgstr ""
+
+#: src/yupay/cli.py:78
+#, python-brace-format
+msgid ""
+"[green]✔ Estimation Approved:[/green] {days} days | ~{rows:,} rows | "
+"~{size:.2f} GB"
+msgstr ""
+
+#: src/yupay/cli.py:86
+#, python-brace-format
+msgid "[bold red]⛔ BLOCKED BY SAFETY GUARD:[/bold red] {e}"
+msgstr ""
+
+#: src/yupay/cli.py:97
+#, python-brace-format
+msgid "[dim]Initial RAM Load: {sys:.1f}% | Budget assigned: {budget:.2f} GB[/dim]"
+msgstr ""
+
+#: src/yupay/cli.py:108
+#, python-brace-format
+msgid "[red]Format Error:[/red] {e}"
+msgstr ""
+
+#: src/yupay/cli.py:112
+#, python-brace-format
+msgid ""
+"[bold green]Starting Temporal Engine for:[/bold green] "
+"[bold]{domain}[/bold]"
+msgstr ""
+
+#: src/yupay/cli.py:113
+#, python-brace-format
+msgid "📂 Output: [blue]{path}[/blue]"
+msgstr ""
+
+#: src/yupay/cli.py:116
+msgid "[bold green]Simulating transactions...[/bold green]"
+msgstr ""
+
+#: src/yupay/cli.py:129
+#, python-brace-format
+msgid "[red]Domain '{domain}' not registered or not implemented.[/red]"
+msgstr ""
+
+#: src/yupay/cli.py:137
+msgid "Generation Summary"
+msgstr ""
+
+#: src/yupay/cli.py:138
+msgid "Table"
+msgstr ""
+
+#: src/yupay/cli.py:139
+msgid "Rows"
+msgstr ""
+
+#: src/yupay/cli.py:140
+msgid "File"
+msgstr ""
+
+#: src/yupay/cli.py:149
+#, python-brace-format
+msgid ""
+"✅ Process completed successfully.\n"
+"Path: {path}\n"
+"[dim]Peak RAM: Yupay {peak_gb:.2f} GB | System {peak_sys:.1f}%[/dim]"
+msgstr ""
+
+#: src/yupay/cli.py:172
+msgid "[yellow]No datasets found in ./data[/yellow]"
+msgstr ""
+
+#: src/yupay/cli.py:175
+msgid "Available Datasets"
+msgstr ""
+
+#: src/yupay/cli.py:176
+msgid "Domain"
+msgstr ""
+
+#: src/yupay/cli.py:177
+msgid "Run ID"
+msgstr ""
+
+#: src/yupay/cli.py:178
+msgid "Size"
+msgstr ""
+
+#: src/yupay/cli.py:179
+msgid "Date"
+msgstr ""
+
+#: src/yupay/cli.py:203
+msgid "[yellow]Specify --domain [name] or --all[/yellow]"
+msgstr ""
+
+#: src/yupay/cli.py:215
+msgid "[yellow]Nothing to delete.[/yellow]"
+msgstr ""
+
+#: src/yupay/cli.py:219
+#, python-brace-format
+msgid "[bold red]Deleting {count} folders (Runs).[/bold red]"
+msgstr ""
+
+#: src/yupay/cli.py:221
+msgid "Are you sure?"
+msgstr ""
+
+#: src/yupay/cli.py:226
+#, python-brace-format
+msgid "[green]Deleted {count} folders.[/green]"
+msgstr ""
+

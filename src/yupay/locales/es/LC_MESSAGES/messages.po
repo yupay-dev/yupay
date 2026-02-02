@@ -1,0 +1,149 @@
+# Spanish translations for PROJECT.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-02-01 23:01-0500\n"
+"PO-Revision-Date: 2026-02-01 23:01-0500\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: es\n"
+"Language-Team: es <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: src/yupay/cli.py:50
+#, python-brace-format
+msgid "[bold red]Configuration Error:[/bold red] {e}"
+msgstr "[bold red]Error de configuración:[/bold red] {e}"
+
+#: src/yupay/cli.py:73
+msgid "[yellow]Analyzing resources and estimating volume...[/yellow]"
+msgstr "[yellow]Analizando recursos y estimando volumen...[/yellow]"
+
+#: src/yupay/cli.py:78
+#, python-brace-format
+msgid ""
+"[green]✔ Estimation Approved:[/green] {days} days | ~{rows:,} rows | "
+"~{size:.2f} GB"
+msgstr ""
+"[green]✔ Estimación Aprobada:[/green] {days} días | ~{rows:,} filas | "
+"~{size:.2f} GB"
+
+#: src/yupay/cli.py:86
+#, python-brace-format
+msgid "[bold red]⛔ BLOCKED BY SAFETY GUARD:[/bold red] {e}"
+msgstr "[bold red]⛔ BLOQUEADO POR SEGURIDAD:[/bold red] {e}"
+
+#: src/yupay/cli.py:97
+#, python-brace-format
+msgid "[dim]Initial RAM Load: {sys:.1f}% | Budget assigned: {budget:.2f} GB[/dim]"
+msgstr "[dim]Carga Inicial de RAM: {sys:.1f}% | Presupuesto: {budget:.2f} GB[/dim]"
+
+#: src/yupay/cli.py:108
+#, python-brace-format
+msgid "[red]Format Error:[/red] {e}"
+msgstr "[red]Error de formato:[/red] {e}"
+
+#: src/yupay/cli.py:112
+#, python-brace-format
+msgid ""
+"[bold green]Starting Temporal Engine for:[/bold green] "
+"[bold]{domain}[/bold]"
+msgstr ""
+"[bold green]Iniciando Motor Temporal para:[/bold green] "
+"[bold]{domain}[/bold]"
+
+#: src/yupay/cli.py:113
+#, python-brace-format
+msgid "📂 Output: [blue]{path}[/blue]"
+msgstr "📂 Salida: [blue]{path}[/blue]"
+
+#: src/yupay/cli.py:116
+msgid "[bold green]Simulating transactions...[/bold green]"
+msgstr "[bold green]Simulando transacciones...[/bold green]"
+
+#: src/yupay/cli.py:129
+#, python-brace-format
+msgid "[red]Domain '{domain}' not registered or not implemented.[/red]"
+msgstr "[red]Dominio '{domain}' no registrado o no implementado.[/red]"
+
+#: src/yupay/cli.py:137
+msgid "Generation Summary"
+msgstr "Resumen de Generación"
+
+#: src/yupay/cli.py:138
+msgid "Table"
+msgstr "Tabla"
+
+#: src/yupay/cli.py:139
+msgid "Rows"
+msgstr "Filas"
+
+#: src/yupay/cli.py:140
+msgid "File"
+msgstr "Archivo"
+
+#: src/yupay/cli.py:149
+#, python-brace-format
+msgid ""
+"✅ Process completed successfully.\n"
+"Path: {path}\n"
+"[dim]Peak RAM: Yupay {peak_gb:.2f} GB | System {peak_sys:.1f}%[/dim]"
+msgstr ""
+"✅ Proceso completado exitosamente.\n"
+"Ruta: {path}\n"
+"[dim]Peak RAM: Yupay {peak_gb:.2f} GB | Sistema {peak_sys:.1f}%[/dim]"
+
+#: src/yupay/cli.py:172
+msgid "[yellow]No datasets found in ./data[/yellow]"
+msgstr "[yellow]No se encontraron datasets en ./data[/yellow]"
+
+#: src/yupay/cli.py:175
+msgid "Available Datasets"
+msgstr "Datasets Disponibles"
+
+#: src/yupay/cli.py:176
+msgid "Domain"
+msgstr "Dominio"
+
+#: src/yupay/cli.py:177
+msgid "Run ID"
+msgstr "Run ID"
+
+#: src/yupay/cli.py:178
+msgid "Size"
+msgstr "Tamaño"
+
+#: src/yupay/cli.py:179
+msgid "Date"
+msgstr "Fecha"
+
+#: src/yupay/cli.py:203
+msgid "[yellow]Specify --domain [name] or --all[/yellow]"
+msgstr "[yellow]Especifique --domain [nombre] o --all[/yellow]"
+
+#: src/yupay/cli.py:215
+msgid "[yellow]Nothing to delete.[/yellow]"
+msgstr "[yellow]Nada que eliminar.[/yellow]"
+
+#: src/yupay/cli.py:219
+#, python-brace-format
+msgid "[bold red]Deleting {count} folders (Runs).[/bold red]"
+msgstr "[bold red]Se eliminarán {count} carpetas (Runs).[/bold red]"
+
+#: src/yupay/cli.py:221
+msgid "Are you sure?"
+msgstr "¿Está seguro?"
+
+#: src/yupay/cli.py:226
+#, python-brace-format
+msgid "[green]Deleted {count} folders.[/green]"
+msgstr "[green]Se eliminaron {count} carpetas.[/green]"
+

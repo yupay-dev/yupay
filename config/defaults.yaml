@@ -21,6 +21,7 @@ chaos:
   # - high:   Hostile. Broken FKs, time paradoxes, massive corruption.
   
   default_level: "low"
+  global_seed: 42
   
   levels:
     low:

@@ -27,3 +27,8 @@ output_format: "parquet"  # Options: parquet, csv, duckdb
 # Protect your machine. The generator will stop if these are exceeded.
 max_disk_usage_gb: 10          # Stop if free space < 10GB or dataset > 10GB
 max_daily_volume_limit: 100000 # Hard limit to prevent configuration typos
+
+
+# 5. LOCALE
+# Locale for names, addresses, etc. ISO 639-1 code
+locale: "en"
