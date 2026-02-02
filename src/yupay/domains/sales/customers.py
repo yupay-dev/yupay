@@ -36,7 +36,7 @@ class CustomerGenerator(BaseGenerator):
         email_weights = self.config.get("email_weights", None)
 
         df = pl.DataFrame({
-            "customer_id": [f"CUST-{i:07d}" for i in range(rows)],
+            "customer_id": pl.int_range(0, rows, dtype=pl.UInt32, eager=True),
             "first_name": rnd.sample_from_list(first_names, rows),
             "last_name": rnd.sample_from_list(last_names, rows),
             "email_domain": rnd.sample_from_list(email_domains, rows, weights=email_weights)

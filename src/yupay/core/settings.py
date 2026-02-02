@@ -13,7 +13,7 @@ class Settings:
         if config_dir is None:
             # Por defecto busca en la raíz del proyecto (asumiendo que se ejecuta desde ahí)
             # o un nivel arriba si se instala como paquete editable y se ejecuta script.
-            
+
             # Opción robusta: Path.cwd() / "config" si asumimos ejecución desde root
             self.config_dir = pathlib.Path.cwd() / "config"
         else:
@@ -22,6 +22,15 @@ class Settings:
     def load_defaults(self) -> dict[str, Any]:
         path = self.config_dir / "defaults.yaml"
         return self._read_yaml(path)
+
+    def load_user_config(self) -> dict[str, Any]:
+        """
+        Loads user configuration from config/main.yaml (Primary Source).
+        """
+        path = self.config_dir / "main.yaml"
+        if path.exists():
+            return self._read_yaml(path)
+        return {}
 
     def load_locale(self, locale: str) -> dict[str, Any]:
         """

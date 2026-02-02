@@ -5,6 +5,12 @@ generation:
   rows: 50000
   format: "csv"
 
+domains:
+  sales:
+    customers_base: 50000
+    products_catalog_size: 500
+
+
 entities:
   customers:
     type: "individual"

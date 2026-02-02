@@ -1,0 +1,12 @@
+domains:
+  inventory:
+    suppliers_base: 100
+    
+entities:
+  suppliers:
+    # Optional overrides for generator
+    seed: 42
+    
+chaos:
+  # Inventory default chaos level
+  default_level: low

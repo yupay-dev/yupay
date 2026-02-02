@@ -48,3 +48,21 @@ class Randomizer:
 
     def random(self) -> float:
         return random.random()
+
+    def random_index_expr(self, n_options: int, col_name: str = "index") -> pl.Expr:
+        """
+        Genera una expresión de Polars que produce un índice aleatorio entre 0 y n_options - 1.
+        Utiliza hashing determinista basado en una columna de entrada (por defecto 'index').
+        Es 'Lazy' y no materializa memoria.
+        """
+        # A simple pseudo-random generator using hash and modulo.
+        # We add a salt based on self.seed to vary the results.
+        if n_options <= 0:
+            raise ValueError("n_options must be positive")
+
+        return (
+            pl.col(col_name)
+            .hash(seed=self.seed)  # Use the seed for reproducibility
+            .mod(n_options)
+            .cast(pl.UInt32)
+        )

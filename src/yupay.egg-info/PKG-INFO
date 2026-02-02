@@ -1,0 +1,17 @@
+Metadata-Version: 2.4
+Name: yupay
+Version: 0.1.0
+Summary: Realistic synthetic ERP data generator using Polars
+Author: Manuel Vasquez
+License: MIT
+Requires-Python: ==3.14.1
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: polars==1.37.1
+Requires-Dist: pyyaml==6.0.2
+Requires-Dist: click==8.1.7
+Requires-Dist: pydantic==2.7.0
+Requires-Dist: pyarrow==15.0.0
+Requires-Dist: rich==13.7.0
+Requires-Dist: duckdb==0.10.0
+Dynamic: license-file

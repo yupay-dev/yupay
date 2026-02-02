@@ -1,0 +1,65 @@
+# ==========================================
+# YUPAY TECHNICAL DEFAULTS
+# ==========================================
+# This file governs the internal behavior of the system.
+# User overrides come from main.yaml
+# ==========================================
+
+system:
+  # Internal Guardrails (Cannot be overridden by main.yaml limits)
+  max_days_hard_limit: 10950          # 30 years
+  max_daily_volume_cap: 100000000     # 100M rows/day max absolute cap
+  
+  # Resource buffer (GB) to leave free on disk
+  safety_buffer_gb: 5
+
+chaos:
+  # Chaos Levels Definition
+  # Levels: 
+  # - low:    Almost clean, minor inconsistencies.
+  # - medium: Realistic. Nulls, duplicates, standard human errors.
+  # - high:   Hostile. Broken FKs, time paradoxes, massive corruption.
+  
+  default_level: "low"
+  
+  levels:
+    low:
+      null_probability: 0.01
+      duplicate_probability: 0.001
+      orphan_probability: 0.0
+      latency_hours_max: 24
+      string_noise:
+        casing_probability: 0.0
+        spaces_probability: 0.0
+      
+    medium:
+      null_probability: 0.05
+      duplicate_probability: 0.02
+      orphan_probability: 0.01
+      latency_hours_max: 72
+      string_noise:
+        casing_probability: 0.1 # 10% mixed/bad casing
+        spaces_probability: 0.1 # 10% trailing/leading spaces
+      
+    high:
+      null_probability: 0.15
+      duplicate_probability: 0.10
+      orphan_probability: 0.05
+      latency_hours_max: 168 # 1 week
+      string_noise:
+        casing_probability: 0.4
+        spaces_probability: 0.4
+
+domains:
+  sales:
+    # Default column weights for estimation (bytes)
+    # Based on Parquet efficient storage
+    estimation_weights:
+      customers: 50
+      products: 40
+      orders: 20
+      payments: 30
+      suppliers: 50
+      stock_movements: 25
+
+

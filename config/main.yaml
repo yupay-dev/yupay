@@ -1,0 +1,29 @@
+# ==========================================
+# YUPAY MAIN CONFIGURATION
+# ==========================================
+# This is the only file you need to touch to generate data.
+# 
+# "Simulating Real Business Friction"
+# ==========================================
+
+# 1. TIME HORIZON
+# Defines the simulation period.
+start_date: "2010-02-01"
+end_date: "2024-12-31"
+
+# 2. BUSINESS VOLUME
+# Controls the scale of the simulation.
+# Note: Actual volume will vary daily based on seasonality and noise.
+daily_avg_transactions: 15000
+chaos_level: "medium" # Enable String Noise (10%)
+# ~1.8M rows/year
+
+# 3. OUTPUT SETTINGS
+# Where and how to save the data.
+output_path: "data"
+output_format: "parquet"  # Options: parquet, csv, duckdb
+
+# 4. SAFETY LIMITS
+# Protect your machine. The generator will stop if these are exceeded.
+max_disk_usage_gb: 10          # Stop if free space < 10GB or dataset > 10GB
+max_daily_volume_limit: 100000 # Hard limit to prevent configuration typos

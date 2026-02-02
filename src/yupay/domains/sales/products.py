@@ -49,7 +49,8 @@ class ProductGenerator(BaseGenerator):
                           "category", "product_name", "base_price"], orient="row")
 
         df = df.with_columns(
-            product_id=pl.Series([f"PROD-{i:05d}" for i in range(rows)])
+            product_id=pl.int_range(0, rows, dtype=pl.UInt32, eager=True),
+            base_price=pl.col("base_price").cast(pl.Decimal(10, 2))
         )
 
         return df.lazy()

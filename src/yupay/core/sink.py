@@ -24,8 +24,8 @@ class BaseSink(ABC):
         return DiskGuard.check_space(estimated, threshold_gb=20)
 
     @abstractmethod
-    def write(self, name: str, lazy_df: pl.LazyFrame, rows_estimated: int) -> Path:
+    def write(self, name: str, lazy_df: pl.LazyFrame, rows_estimated: int, part_id: int = None) -> tuple[Path, int]:
         """
-        Escribe el LazyFrame al disco.
+        Escribe el LazyFrame al disco y retorna (Ruta, Cantidad de Filas).
         """
         pass
