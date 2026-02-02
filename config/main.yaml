@@ -8,13 +8,13 @@
 
 # 1. TIME HORIZON
 # Defines the simulation period.
-start_date: "2010-02-01"
+start_date: "2024-01-01"
 end_date: "2024-12-31"
 
 # 2. BUSINESS VOLUME
 # Controls the scale of the simulation.
 # Note: Actual volume will vary daily based on seasonality and noise.
-daily_avg_transactions: 15000
+daily_avg_transactions: 100000
 chaos_level: "medium" # Enable String Noise (10%)
 # ~1.8M rows/year
 
