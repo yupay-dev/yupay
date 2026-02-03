@@ -10,43 +10,77 @@ class ProductGenerator(BaseGenerator):
 
     def generate(self, rows: int) -> pl.LazyFrame:
         rnd = Randomizer(seed=self.config.get("seed", 42) + 1)
-
-        # La config ahora debe venir con el catálogo de productos
-        # config['catalog'] = { 'Electronics': { 'brands': [...], ... }, ... }
         catalog = self.config.get("catalog", {})
         categories = list(catalog.keys())
 
         if not categories:
+            # Fallback
             categories = ["General"]
             catalog = {"General": {"brands": ["Generic"], "nouns": [
                 "Item"], "adjectives": ["Standard"], "price_factor": 1.0}}
 
-        # Generar lista base de categorías para cada fila
-        cats_column = rnd.sample_from_list(categories, rows)
+        # Build flattened recipe list from catalog (Weighted by how many items we need?)
+        # Actually for a fixed catalog size (rows), we just populate specific products.
+        # But 'rows' comes from config 'products_catalog_size'.
 
-        # Helper para construir nombres y precios
-        # Polars no es ideal para lógica muy procedural fila por fila con dicts complejos,
-        # pero para < 1M filas funciona bien con map_elements o listas de python pre-generadas.
-        # Para eficiencia, generamos vectores NumPy por categoría y luego mezclamos,
-        # o generamos listas de python y luego creamos el DataFrame.
+        # New Logic: Generate 'rows' unique products.
+        # We will pick a random Category -> Subtype (if exists) -> Components
 
         data_rows = []
-        for _ in range(rows):
-            cat = rnd.choice(categories)
-            cat_data = catalog[cat]
 
-            brand = rnd.choice(cat_data.get("brands", ["Generic"]))
-            adj = rnd.choice(cat_data.get("adjectives", ["Standard"]))
-            noun = rnd.choice(cat_data.get("nouns", ["Product"]))
+        # Helper to safely get from dict
+        def get_components(cat_ctx):
+            return (
+                cat_ctx.get("brands", ["Generic"]),
+                cat_ctx.get("nouns", ["Product"]),
+                cat_ctx.get("adjectives", ["Standard"]),
+                cat_ctx.get("price_factor", 1.0),
+                cat_ctx.get("tags", ["all_year"])
+            )
+
+        for _ in range(rows):
+            cat_name = rnd.choice(categories)
+            cat_data = catalog[cat_name]
+
+            # Check for subtypes
+            if "subtypes" in cat_data:
+                subtype_data = rnd.choice(cat_data["subtypes"])
+                sub_name = subtype_data.get("name", "General")
+                brands, nouns, adjs, p_factor, tags = get_components(
+                    subtype_data)
+            else:
+                sub_name = "General"
+                brands, nouns, adjs, p_factor, tags = get_components(cat_data)
+
+            # Generate Item
+            brand = rnd.choice(brands)
+            noun = rnd.choice(nouns)
+            adj = rnd.choice(adjs)
+
+            # Pick one tag from the list (usually just one)
+            seasonal_tag = rnd.choice(tags) if tags else "all_year"
 
             name = f"{brand} {adj} {noun}"
-            base_price = (rnd.random() * 100 + 10) * \
-                cat_data.get("price_factor", 1.0)
+            # Modified base for grocery realism
+            base_price = (rnd.random() * 50 + 5) * p_factor
 
-            data_rows.append((cat, name, round(base_price, 2)))
+            data_rows.append((
+                cat_name,
+                sub_name,
+                brand,
+                name,
+                seasonal_tag,
+                round(base_price, 2)
+            ))
 
         df = pl.DataFrame(data_rows, schema=[
-                          "category", "product_name", "base_price"], orient="row")
+            "category",
+            "subtype",
+            "brand",  # Added for raw export
+            "product_name",
+            "seasonal_tag",
+            "base_price"
+        ], orient="row")
 
         df = df.with_columns(
             product_id=pl.int_range(0, rows, dtype=pl.UInt32, eager=True),

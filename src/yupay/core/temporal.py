@@ -1,8 +1,9 @@
 
-
 import polars as pl
 from datetime import datetime, timedelta
 from typing import List, Dict, Tuple, Optional
+import math
+import random
 
 
 class TimeProfile:
@@ -62,33 +63,54 @@ class TimeEngine:
         counts = []
         dates = []
 
+        # Poisson helper
+        def poisson_sample(lambda_):
+            if lambda_ < 30:
+                L = math.exp(-lambda_)
+                k = 0
+                p = 1.0
+                while p > L:
+                    k += 1
+                    p *= random.random()
+                return k - 1
+            else:
+                return max(0, int(random.normalvariate(lambda_, math.sqrt(lambda_))))
+
         for d in date_range:
-            factor = self.profile.get_factor(d, self.start_date)
-            expected_vol = self.daily_avg * factor
+            # 1. Base Seasonality & Trend
+            base_factor = self.profile.get_factor(d, self.start_date)
 
-            # Poisson distribution for realistic daily variance
-            # Using pure Python implementation to avoid numpy dependency.
-            # Knuth's algorithm or similar for Poisson sampling.
-            import math
-            import random
+            # 2. Macro Volatility (Yearly Economic Conditions) - 0.85 to 1.15
+            year_seed = d.year * 13
+            # Deterministic but pseudo-random per year
+            macro_rnd = ((year_seed * 997) % 31) / 31.0
+            macro_factor = 0.85 + (macro_rnd * 0.30)
 
-            def poisson_sample(lambda_):
-                if lambda_ < 30:
-                    # Knuth's algorithm
-                    L = math.exp(-lambda_)
-                    k = 0
-                    p = 1.0
-                    while p > L:
-                        k += 1
-                        p *= random.random()
-                    return k - 1
-                else:
-                    # Normal approximation for large lambda
-                    return max(0, int(random.normalvariate(lambda_, math.sqrt(lambda_))))
+            # 3. Micro Volatility (Payday + Weekends)
+            day = d.day
+            weekday = d.weekday()  # Mon=0, Sun=6
+            micro_factor = 1.0
+
+            # Payday Effect (Quincena & Fin de Mes)
+            if 14 <= day <= 16 or day >= 28:
+                micro_factor *= 1.25
+
+            # Weekend Boost
+            if weekday >= 5:  # Sat, Sun
+                micro_factor *= 1.15
+
+            # 4. Total Factor
+            total_factor = base_factor * macro_factor * micro_factor
+
+            # 5. Pure Randomness/Chaos (Daily Jitter) 0.8-1.2
+            jitter = 0.8 + (random.random() * 0.4)
+
+            # Final Expected Volume
+            expected_vol = self.daily_avg * total_factor * jitter
 
             daily_count = poisson_sample(expected_vol)
 
-            # Ensure at least 0 (Poisson does this, but being safe)
+            # Ensure at least 0
             counts.append(max(0, daily_count))
             dates.append(d)
 
@@ -104,19 +126,6 @@ class TimeEngine:
         Critically: This replaces simple "row generation".
         Each row here is a potential "order" slot.
         """
-        # We repeat the date N times where N is target_rows
-        # Polars 'repeat_by' or similar expansion is needed.
-        # But for LazyFrame efficiency with massive data, we might want to use ranges.
-
-        # Strategy:
-        # 1. Timeline is small (365 rows). We can keep it eager or convert to lazy.
-        # 2. Add an index to timeline.
-        # 3. Use map_elements or separate logic?
-        # Better: Convert to list of dates repeated? No, memory.
-
-        # Polars Efficient Expansion:
-        # df.select(pl.col('date').repeat_by('target_rows').explode())
-
         return (
             timeline_df.lazy()
             .select(

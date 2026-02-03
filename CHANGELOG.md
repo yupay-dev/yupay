@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.1.0] - 2026-02-03
+### Added
+- **Deep Realism**: Continuous Cosine Seasonality, Payday/Weekend effects, and Daily Jitter.
+- **Customer Behavior**: Pareto 80/20 distribution for order assignment.
+- **Product Bias**: Weekend probability boost for seasonal products.
+- **Dynamic Seeding**: Automatic time-based seed generation for unique runs.
+
+### Changed
+- **CLI Output**: Added folder size report and removed debug text.
+- **Sorting**: Guaranteed chronological order for `orders` and `payments` tables.
+
 ## [1.0.0] - 2026-02-02
 ### Changed
 - **First Public Release**: Project is out of beta.

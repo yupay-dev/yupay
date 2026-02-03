@@ -16,3 +16,11 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/).
 4. Run full test suite: `pytest tests/`.
 5. Merge to `main`.
 6. Tag the commit (e.g., `v0.2.0`).
+
+## Version History
+
+| Version | Date       | Status   | Codename |
+| :------ | :--------- | :------- | :------- |
+| **v1.1.0** | 2026-02-03 | **LATEST STABLE** | Deep Realism |
+| v1.0.0  | 2026-02-02 | Archived | Initial Public |
+| v0.1.0  | 2026-02-01 | Beta     | MVP |

@@ -1,17 +1,70 @@
-Electronics:
-  brands: ["Samsung", "LG", "Sony", "Apple", "Xiaomi"]
-  adjectives: ["Smart", "Pro", "Ultra", "Lite", "Max"]
-  nouns: ["TV", "Phone", "Laptop", "Watch", "Tablet"]
-  price_factor: 1.5
+Beverages:
+  subtypes:
+    - name: "Summer Refreshments"
+      nouns: ["Iced Tea", "Cold Beer", "Lemonade", "Soda", "Energy Drink"]
+      brands: ["Coca-Cola", "Heineken", "Red Bull", "Lipton", "Sprite"]
+      adjectives: ["Chilled", "Sparkling", "Zero", "Ice-Cold", "Fresh"]
+      tags: ["summer"]
+      price_factor: 1.2
+    
+    - name: "Winter Warmers"
+      nouns: ["Coffee", "Hot Chocolate", "Herbal Tea", "Cappuccino"]
+      brands: ["Nescafe", "Starbucks", "Nestle", "McCafe"]
+      adjectives: ["Hot", "Roasted", "Creamy", "Spiced"]
+      tags: ["winter"]
+      price_factor: 1.5
 
-Home:
-  brands: ["IKEA", "Philips", "Bosch", "Oster", "Tramontina"]
-  adjectives: ["Ergonomic", "Wooden", "Steel", "Comfort", "Modern"]
-  nouns: ["Chair", "Table", "Lamp", "Mixer", "Desk"]
-  price_factor: 0.8
+    - name: "Essentials"
+      nouns: ["Water", "Orange Juice", "Milk", "Yogurt"]
+      brands: ["San Mateo", "Gloria", "Laive", "Pura Vida"]
+      adjectives: ["Natural", "Low-Fat", "Pure", "Calcium-Enriched"]
+      tags: ["all_year"]
+      price_factor: 0.8
 
-Fashion:
-  brands: ["Zara", "H&M", "Nike", "Adidas", "Levi's"]
-  adjectives: ["Casual", "Slim", "Vintage", "Urban", "Sport"]
-  nouns: ["Shirt", "Pants", "Jacket", "Shoes", "Hat"]
-  price_factor: 0.5
+Groceries:
+  subtypes:
+    - name: "Pantry Staples"
+      nouns: ["Rice", "Pasta", "Cooking Oil", "Sugar", "Flour"]
+      brands: ["Costeno", "Don Vittorio", "Primor", "Cartavio"]
+      adjectives: ["Premium", "White", "Extra-Virgin", "Brown"]
+      tags: ["all_year"]
+      price_factor: 0.6
+    
+    - name: "Summer Fruits"
+      nouns: ["Watermelon", "Mango", "Pineapple", "Grapes"]
+      brands: ["FarmFresh", "EcoFarms", "GreenValley"]
+      adjectives: ["Sweet", "Juicy", "Organic", "Seedless"]
+      tags: ["summer"]
+      price_factor: 0.9
+
+Personal_Care:
+  subtypes:
+    - name: "Sun Protection"
+      nouns: ["Sunscreen", "After-Sun Gel", "Tanning Oil"]
+      brands: ["Nivea", "Banana Boat", "Hawaiian Tropic"]
+      adjectives: ["SPF50+", "Hydrating", "Tropical_Scent"]
+      tags: ["summer"]
+      price_factor: 2.0
+    
+    - name: "Daily Hygiene"
+      nouns: ["Shampoo", "Soap", "Toothpaste", "Deodorant"]
+      brands: ["Dove", "Colgate", "Rexona", "Head&Shoulders"]
+      adjectives: ["Fresh", "Whitening", "Antibacterial", "Smooth"]
+      tags: ["all_year"]
+      price_factor: 1.0
+
+Home_Improvement:
+  subtypes:
+    - name: "Outdoor & BBQ"
+      nouns: ["Charcoal", "Grill Tool Set", "Cooler", "Picnic Mat"]
+      brands: ["Weber", "Tramontina", "Coleman"]
+      adjectives: ["Portable", "Heavy-Duty", "Insulated"]
+      tags: ["summer"]
+      price_factor: 2.5
+    
+    - name: "General Tools"
+      nouns: ["Hammer", "Screwdriver", "Drill", "Tape Measure"]
+      brands: ["Stanley", "Bosch", "Makita"]
+      adjectives: ["Pro", "Cordless", "Steel"]
+      tags: ["all_year"]
+      price_factor: 3.0

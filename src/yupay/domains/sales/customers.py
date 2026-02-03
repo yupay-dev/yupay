@@ -35,12 +35,23 @@ class CustomerGenerator(BaseGenerator):
         email_domains = self.config.get("email_domains", ["gmail.com"])
         email_weights = self.config.get("email_weights", None)
 
+        cities = self.config.get(
+            "cities", ["Lima", "Arequipa", "Trujillo", "Cusco", "Piura"])
+
         df = pl.DataFrame({
             "customer_id": pl.int_range(0, rows, dtype=pl.UInt32, eager=True),
             "first_name": rnd.sample_from_list(first_names, rows),
             "last_name": rnd.sample_from_list(last_names, rows),
-            "email_domain": rnd.sample_from_list(email_domains, rows, weights=email_weights)
+            "email_domain": rnd.sample_from_list(email_domains, rows, weights=email_weights),
+            "city": rnd.sample_from_list(cities, rows)
         })
+
+        # Generar Phone Number determinístico y rápido en Polars puramente
+        df = df.with_columns(
+            phone_number=pl.lit("9") +
+            pl.col("customer_id").hash(42).mod(
+                90000000).add(10000000).cast(pl.String)
+        )
 
         # Generar email basado en nombres
         df = df.with_columns(

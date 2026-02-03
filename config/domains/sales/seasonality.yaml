@@ -1,0 +1,25 @@
+# Seasonality Rules for Sales Domain
+# Defines periods and purchase probabilities for tagged products.
+
+seasons:
+  # South Hemisphere (Peru/Latam)
+  summer: [1, 2, 3, 12] # Dec, Jan, Feb, Mar
+  winter: [6, 7, 8, 9]  # Jun, Jul, Aug, Sep
+  transition: [4, 5, 10, 11] # Apr, May, Oct, Nov
+
+weights:
+  # Probability of picking a product from a specific tag bucket given the current month
+  summer_months:
+    summer: 0.60
+    winter: 0.05
+    all_year: 0.35
+    
+  winter_months:
+    summer: 0.10
+    winter: 0.50
+    all_year: 0.40
+    
+  transition_months:
+    summer: 0.25
+    winter: 0.25
+    all_year: 0.50

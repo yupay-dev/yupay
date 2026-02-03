@@ -1,6 +1,6 @@
 [project]
 name = "yupay"
-version = "1.0.0"
+version = "1.1.0"
 description = "Realistic synthetic ERP data generator using Polars"
 authors = [{ name = "Manuel Vasquez" }]
 license = { text = "MIT" }

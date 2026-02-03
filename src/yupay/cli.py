@@ -70,6 +70,23 @@ def generate(domain):
             _("[bold red]Configuration Error:[/bold red] {e}").format(e=e))
         return
 
+    # 1.1 Dynamic Randomness (Global Entropy)
+    # If seed is not fixed in config (e.g. 42), we generate a new one.
+    # Note: 'defaults' usually has seed=42. We check if user intentionally set it.
+    # If user_config doesn't have "seed", we override the default 42 with Time-based.
+
+    if "seed" not in user_config:
+        # Dynamic Seed
+        import time
+        dynamic_seed = int(time.time())
+        full_config["seed"] = dynamic_seed
+        console.print(
+            _("[magenta]🎲 Random Seed Generated:[/magenta] [bold]{seed}[/bold]").format(seed=dynamic_seed))
+    else:
+        # User defined seed
+        console.print(
+            _("[magenta]🎲 User Seed Constraints:[/magenta] [bold]{seed}[/bold]").format(seed=full_config["seed"]))
+
     # 2. Setup Output Strictness
     # "Config-as-Code": We rely SOLELY on main.yaml
     full_config.setdefault("output_path", "data")
@@ -165,9 +182,15 @@ def generate(domain):
     console.print(table)
     peak_gb = MemoryGuard._peak_rss_gb
     peak_sys = MemoryGuard._peak_system_pct
+
+    # Calculate Final Size
+    from yupay.utils.files import get_dir_size, format_size
+    final_size_bytes = get_dir_size(run_dir)
+    final_size_str = format_size(final_size_bytes)
+
     console.print(Panel(
-        _("✅ Process completed successfully.\nPath: {path}\n[dim]Peak RAM: Yupay {peak_gb:.2f} GB | System {peak_sys:.1f}%[/dim]").format(
-            path=run_dir, peak_gb=peak_gb, peak_sys=peak_sys
+        _("✅ Process completed successfully.\nPath: {path}\nSize: {size}\n[dim]Peak RAM: Yupay {peak_gb:.2f} GB | System {peak_sys:.1f}%[/dim]").format(
+            path=run_dir, size=final_size_str, peak_gb=peak_gb, peak_sys=peak_sys
         ),
         style="bold green"
     ))
