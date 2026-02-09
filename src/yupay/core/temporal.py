@@ -1,44 +1,77 @@
 
 import polars as pl
-from datetime import datetime, timedelta
-from typing import List, Dict, Tuple, Optional
+from datetime import datetime, timedelta, date
+from typing import List, Dict, Tuple, Optional, Any
 import math
 import random
 
 
 class TimeProfile:
     """
-    Defines the temporal behavior of a business domain (Seasonality, Trend, Weekly Patterns).
+    Defines the temporal behavior of a business domain (Seasonality, Trend, Weekly Patterns, Events).
     """
 
-    def __init__(self, name: str, seasonality_weights: List[float] = None, trend_slope: float = 0.0):
+    def __init__(self, name: str,
+                 seasonality_weights: List[float] = None,
+                 trend_slope: float = 0.0,
+                 weekly_weights: List[float] = None,
+                 holidays: Dict[Tuple[int, int], float] = None,
+                 special_dates: Dict[date, float] = None,
+                 enable_payday: bool = True):
         self.name = name
         # Monthly weights (Jan-Dec). Default: Flat (1.0)
         self.seasonality_weights = seasonality_weights or [1.0] * 12
         # Simple linear trend (growth per month). 0.01 = 1% growth/month
         self.trend_slope = trend_slope
+        # Validations for weekly weights
+        if weekly_weights and len(weekly_weights) != 7:
+            raise ValueError("weekly_weights must have exactly 7 elements (Mon-Sun)")
+        # Default: Flat week
+        self.weekly_weights = weekly_weights or [1.0] * 7
+        
+        # Holidays: (Month, Day) -> Multiplier
+        self.holidays = holidays or {}
+        # Special Shocks: Date -> Multiplier
+        self.special_dates = special_dates or {}
+        
+        self.enable_payday = enable_payday
 
-    def get_factor(self, date: datetime, start_date: datetime) -> float:
+    def get_factor(self, current_date: datetime, start_date: datetime) -> float:
         """
-        Calculates the volume factor for a specific date based on seasonality and trend.
+        Calculates the volume factor for a specific date based on all configured components.
         """
-        month_idx = date.month - 1
+        # 1. Seasonality (Monthly)
+        month_idx = current_date.month - 1
         seasonal_factor = self.seasonality_weights[month_idx]
 
-        # Trend calculation: linear growth based on months elapsed
-        months_elapsed = (date.year - start_date.year) * \
-            12 + (date.month - start_date.month)
+        # 2. Trend (Linear daily growth)
+        # Calculate percent of year elapsed or total days elapsed
+        days_elapsed = (current_date - start_date).days
+        # Approx months for compatible slope definition
+        months_elapsed = days_elapsed / 30.44
         trend_factor = 1.0 + (self.trend_slope * months_elapsed)
 
-        # Weekly pattern (simplified): Weekends might be lower (0.8) for B2B, or Higher (1.2) for Retail
-        # TODO: Make weekday weights configurable. Now hardcoding a generic erratic pattern.
-        # Mon(0), Tue(1)... Sun(6)
-        weekday = date.weekday()
-        weekday_factor = 1.0
-        if weekday >= 5:  # Sat, Sun
-            weekday_factor = 0.9  # Slight dip on weekends generic
+        # 3. Weekly Pattern
+        weekday = current_date.weekday() # 0=Mon, 6=Sun
+        weekly_factor = self.weekly_weights[weekday]
+        
+        # 4. Holidays (Recurring)
+        holiday_factor = self.holidays.get((current_date.month, current_date.day), 1.0)
+        
+        # 5. Special Dates (One-off)
+        special_factor = self.special_dates.get(current_date.date(), 1.0)
+        
+        # 6. Payday Effect (if enabled)
+        payday_factor = 1.0
+        if self.enable_payday:
+            day = current_date.day
+            # Quincena (14-16) or Fin de Mes (28+)
+            if 14 <= day <= 16: 
+                payday_factor = 1.25
+            elif day >= 28:
+                payday_factor = 1.35
 
-        return max(0.1, seasonal_factor * trend_factor * weekday_factor)
+        return max(0.1, seasonal_factor * trend_factor * weekly_factor * holiday_factor * special_factor * payday_factor)
 
 
 class TimeEngine:
@@ -77,36 +110,20 @@ class TimeEngine:
                 return max(0, int(random.normalvariate(lambda_, math.sqrt(lambda_))))
 
         for d in date_range:
-            # 1. Base Seasonality & Trend
-            base_factor = self.profile.get_factor(d, self.start_date)
+            # 1. Base Composite Factor (Seasonality + Trend + Weekly + Holiday + Payday)
+            composite_factor = self.profile.get_factor(d, self.start_date)
 
             # 2. Macro Volatility (Yearly Economic Conditions) - 0.85 to 1.15
             year_seed = d.year * 13
             # Deterministic but pseudo-random per year
             macro_rnd = ((year_seed * 997) % 31) / 31.0
             macro_factor = 0.85 + (macro_rnd * 0.30)
-
-            # 3. Micro Volatility (Payday + Weekends)
-            day = d.day
-            weekday = d.weekday()  # Mon=0, Sun=6
-            micro_factor = 1.0
-
-            # Payday Effect (Quincena & Fin de Mes)
-            if 14 <= day <= 16 or day >= 28:
-                micro_factor *= 1.25
-
-            # Weekend Boost
-            if weekday >= 5:  # Sat, Sun
-                micro_factor *= 1.15
-
-            # 4. Total Factor
-            total_factor = base_factor * macro_factor * micro_factor
-
-            # 5. Pure Randomness/Chaos (Daily Jitter) 0.8-1.2
+            
+            # 3. Pure Randomness/Chaos (Daily Jitter) 0.8-1.2
             jitter = 0.8 + (random.random() * 0.4)
 
             # Final Expected Volume
-            expected_vol = self.daily_avg * total_factor * jitter
+            expected_vol = self.daily_avg * composite_factor * macro_factor * jitter
 
             daily_count = poisson_sample(expected_vol)
 

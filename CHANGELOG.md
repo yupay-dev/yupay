@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0] - 2026-02-09
+### Added
+- **Composite Time Engine**: Demand now driven by `Trend * Seasonality * Weekly * Shock`.
+- **Event Calendar**: Built-in Peruvian holidays (Fiestas Patrias, Xmas) and dynamic events (Mother's Day).
+- **Weekly Patterns**: Configurable day-of-week weights (e.g., higher traffic on weekends).
+- **Linear Trend**: Support for annual growth simulation.
+
 ## [1.2.0] - 2026-02-09
 ### Added
 - **Store Dimension**: Added `dim_stores` representing physical locations (City, Format, Size).

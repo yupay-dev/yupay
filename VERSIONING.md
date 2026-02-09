@@ -21,7 +21,8 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/).
 
 | Version | Date       | Status   | Codename |
 | :------ | :--------- | :------- | :------- |
-| **v1.2.0** | 2026-02-09 | **LATEST STABLE** | Physical Stores |
+| **v1.3.0** | 2026-02-09 | **LATEST STABLE** | Advanced Seasonality |
+| v1.2.0  | 2026-02-09 | Stable   | Physical Stores |
 | v1.1.0 | 2026-02-03 | Stable | Deep Realism |
 | v1.0.0  | 2026-02-02 | Archived | Initial Public |
 | v0.1.0  | 2026-02-01 | Beta     | MVP |

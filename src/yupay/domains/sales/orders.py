@@ -1,8 +1,10 @@
 import polars as pl
+from datetime import datetime, date, timedelta
+
 from yupay.core.dataset import BaseDataset
 from yupay.domains.sales.customers import CustomerGenerator
 from yupay.domains.sales.products import ProductGenerator
-from yupay.core.temporal import TimeEngine
+from yupay.core.temporal import TimeEngine, TimeProfile
 from yupay.core.random import Randomizer
 from yupay.core.entropy import EntropyManager
 
@@ -69,7 +71,58 @@ class SalesDataset(BaseDataset):
         if not ids_allyear: ids_allyear = range(n_products)
 
         # 2. Generar Órdenes (Temporal Engine Strategy)
-        time_eng = TimeEngine(start_date, end_date, daily_avg)
+        # 2.1 Configurar Perfil Retail Perú
+        
+        # Weekly: Mon-Wed (Quiet), Thu (Pickup), Fri-Sun (Peak)
+        weekly_weights = [0.9, 0.9, 1.0, 1.05, 1.2, 1.3, 1.1]
+        
+        # Recurring Holidays (Month, Day) -> Factor
+        holidays = {
+            (1, 1): 0.5,    # New Year (Low)
+            (2, 14): 1.4,   # Valentin
+            (5, 1): 1.1,    # Labor Day
+            (7, 28): 1.8,   # Fiestas Patrias
+            (7, 29): 1.8,   # Fiestas Patrias
+            (10, 31): 1.3,  # Halloween / Criolla
+            (12, 25): 0.2,  # Christmas Day (Closed/Low)
+            (12, 31): 1.5,  # New Year's Eve
+        }
+        
+        # Dynamic Special Dates
+        special_dates = {}
+        s_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
+        e_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
+        
+        for year in range(s_date_obj.year, e_date_obj.year + 1):
+            # Mother's Day: 2nd Sunday of May
+            # Find first Sunday
+            may_1 = date(year, 5, 1)
+            first_sunday = 1 + (6 - may_1.weekday()) 
+            second_sunday = first_sunday + 7
+            mothers_day = date(year, 5, second_sunday)
+            special_dates[mothers_day] = 2.5
+            
+            # Cyber Days (Simulated mid-July)
+            special_dates[date(year, 7, 15)] = 1.6
+            special_dates[date(year, 7, 16)] = 1.6
+            special_dates[date(year, 7, 17)] = 1.6
+            
+            # Christmas Ramp Up
+            special_dates[date(year, 12, 21)] = 1.6
+            special_dates[date(year, 12, 22)] = 2.0
+            special_dates[date(year, 12, 23)] = 2.5
+            special_dates[date(year, 12, 24)] = 3.5 # Peak Panic Buying
+
+        retail_profile = TimeProfile(
+            name="Retail Peru",
+            weekly_weights=weekly_weights,
+            holidays=holidays,
+            special_dates=special_dates,
+            trend_slope=0.005, # +0.5% per month approx
+            enable_payday=True
+        )
+
+        time_eng = TimeEngine(start_date, end_date, daily_avg, profile=retail_profile)
         chaos_eng = EntropyManager(config)
 
         orders_lf = time_eng.expand_events(time_eng.generate_timeline())
