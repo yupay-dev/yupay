@@ -1,11 +1,11 @@
 [project]
 name = "yupay"
-version = "1.1.0"
+version = "1.2.0"
 description = "Realistic synthetic ERP data generator using Polars"
 authors = [{ name = "Manuel Vasquez" }]
 license = { text = "MIT" }
 readme = "README.md"
-requires-python = "==3.14.1"
+requires-python = "==3.13.12"
 dependencies = [
     "polars==1.37.1",
     "pyyaml==6.0.2",

@@ -5,10 +5,9 @@ pyproject.toml
 config/__init__.py
 config/defaults.yaml
 config/main.yaml
-config/domains/finance.yaml
-config/domains/hr.yaml
 config/domains/inventory/main.yaml
 config/domains/sales/main.yaml
+config/domains/sales/seasonality.yaml
 config/domains/sales/catalogs/products.yaml
 config/locales/es_PE/names.yaml
 src/yupay/__init__.py
@@ -43,6 +42,7 @@ src/yupay/domains/sales/handler.py
 src/yupay/domains/sales/orders.py
 src/yupay/domains/sales/payments.py
 src/yupay/domains/sales/products.py
+src/yupay/domains/sales/stores.py
 src/yupay/sinks/__init__.py
 src/yupay/sinks/definitions.py
 src/yupay/utils/files.py

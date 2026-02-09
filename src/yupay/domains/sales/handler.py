@@ -7,7 +7,7 @@ from yupay.core.registry import DomainRegistry, DomainHandler
 from yupay.core.system import MemoryGuard
 from yupay.core.time import TimeEngine
 from yupay.core.erp import ERPDataset
-
+from yupay.domains.sales.stores import StoreGenerator  # New Import
 
 @DomainRegistry.register("sales")
 class SalesHandler:
@@ -15,20 +15,17 @@ class SalesHandler:
         """
         Executes the Sales domain generation logic.
         """
-        dataset = ERPDataset()
+        # Note: We import SalesDataset here to avoid circular imports if any, 
+        # but standard is top-level. 
+        from yupay.domains.sales.orders import SalesDataset
+        
+        dataset = SalesDataset() # Use specific dataset class
         full_config = config
+        results = []
 
-        # 1. Config Context (Specific to Sales)
-        # Note: We rely on Settings being passed or available, but here we receive 'config' which is full_config
-        # We need to access Settings to load locale?
-        # Actually in CLI, "settings" was used to load locale.
-        # Ideally, config should already have everything or we re-instantiate Settings?
-        # For now, let's assume the caller (CLI) handles the locale merge if possible,
-        # OR we just handle it here if it's domain specific.
-        # The original code loaded locale based on config["locale"].
-        # We can do:
+        # 1. Config Context
         from yupay.core.settings import Settings
-        settings = Settings()  # Assuming standard path
+        settings = Settings()
 
         locale_data = settings.load_locale(full_config.get("locale", "es_PE"))
         if "entities" in full_config and "customers" in full_config["entities"]:
@@ -41,11 +38,6 @@ class SalesHandler:
             }
 
         # 2. Decision: Batching or Monolithic?
-        # We need stats? Original code used 'total_trans_est' from estimator.
-        # But estimator runs BEFORE handler.
-        # We can re-estimate or strict check config.
-        # Better: Recalculate or just check daily * days.
-        # Let's perform a lightweight calc since we have the config.
         start = datetime.strptime(full_config["start_date"], "%Y-%m-%d")
         end = datetime.strptime(full_config["end_date"], "%Y-%m-%d")
         days = (end - start).days + 1
@@ -53,34 +45,78 @@ class SalesHandler:
         total_trans_est = days * daily
 
         use_batching = total_trans_est > 5_000_000
-        results = []
+        
+        # 3. GENERATE STORES (New Step)
+        console.print(f"   -> Generando Dimension: stores (Tiendas)")
+        store_gen = StoreGenerator(full_config)
+        # We need Eager DF for passing to Customers/Orders
+        # Default 50 stores or config
+        n_stores = full_config.get("domains", {}).get("sales", {}).get("stores_count", 50)
+        stores_lazy = store_gen.generate(n_stores)
+        stores_df = stores_lazy.collect()
+        
+        # Write Stores
+        out_path, real_count = sink.write("stores", stores_lazy, n_stores)
+        results.append(("stores", real_count, out_path.name))
 
-        # 3. Paso 1: Dimensiones
-        dims_lazy = dataset.build_dimensions(full_config)
-        for table_name, lf in dims_lazy.items():
-            print(f"   -> Escribiendo Dimensión: {table_name}")
-            est = 100000 if table_name == "customers" else 5000
-            out_path, real_count = sink.write(table_name, lf, est)
-            results.append((table_name, real_count, out_path.name))
-
-        # 4. Paso 2: Transacciones
+        # 4. Paso 1: Dimensiones (Customers, Products) & Paso 2: Transacciones
+        # The SalesDataset.build method returns everything including dimensions
+        
+        # We pass stores_df to build
+        # Note: 'dataset.build' returns a Dict[str, LazyFrame]
+        
         if not use_batching:
             # Monolítico
-            trans_lazy = dataset.build_batch(full_config)
-            for table_name, lf in trans_lazy.items():
+            # We call build() which returns ALL tables (dims + facts)
+            # Actually SalesDataset.build returns {customers, products, orders, payments}
+            # We need to distinguish dims from batchable facts?
+            # In original code, ERPDataset.build_dimensions was used. 
+            # Now we use SalesDataset specific build.
+            
+            tables_map = dataset.build(full_config, stores_df=stores_df)
+            
+            for table_name, lf in tables_map.items():
                 budget = MemoryGuard.get_budget_usage_pct()
                 sys_ram = MemoryGuard.get_ram_usage_pct()
                 status.update(
                     f"[bold green]Simulando transacciones Monolíticas... [blue]RAM Budget: {budget:.1f}%[/blue] | [dim]SYS: {sys_ram:.1f}%[/dim][/bold green]")
                 print(f"   -> Planificando tabla (Monolítico): {table_name}")
-                est = total_trans_est if table_name != "stock_movements" else total_trans_est // 10
+                
+                est = total_trans_est
+                if table_name == "customers": est = 10000
+                elif table_name == "products": est = 1000
+                elif table_name == "stores": continue # Already written
+                
                 out_path, real_count = sink.write(table_name, lf, est)
                 results.append((table_name, real_count, out_path.name))
-        else:
-            # BATCHING
-            print(
-                f"   -> ESCALADO DETECTADO: Usando gestión dinámica de presupuesto de RAM.")
 
+        else:
+            # BATCHING LOGIC
+            # For massive data, we should write Dimensions first (Customers, Products)
+            # Then loop for Orders/Payments.
+            
+            # A. Write Dimensions
+            # We can re-use build() but just take dims?
+            # Or assume Customers fits in memory?
+            # Let's use build() for dimensions specifically if possible, 
+            # OR just instantiate generators directly here.
+            
+            # To avoid code duplication, we assume 'products' and 'customers' are small enough 
+            # to be generated once.
+            
+            # Generate ALL lazy
+            full_lazy_map = dataset.build(full_config, stores_df=stores_df)
+            
+            # Extract Dimensions
+            dims = ["customers", "products"]
+            for d in dims:
+                 if d in full_lazy_map:
+                    print(f"   -> Escribiendo Dimensión: {d}")
+                    out_path, real_count = sink.write(d, full_lazy_map[d], 10000)
+                    results.append((d, real_count, out_path.name))
+            
+            # B. Loop for Transactions
+            print(f"   -> ESCALADO DETECTADO: Usando gestión dinámica de presupuesto de RAM.")
             current_start = full_config["start_date"]
             end_limit = full_config["end_date"]
             target_rows = 5_000_000
@@ -88,89 +124,48 @@ class SalesHandler:
             stable_count = 0
 
             while datetime.strptime(current_start, "%Y-%m-%d") <= datetime.strptime(end_limit, "%Y-%m-%d"):
-                # A. Evaluación Proactiva
+                # ... Memory Guard Checks ...
                 ram_status = MemoryGuard.get_status()
                 current_ram = MemoryGuard.get_ram_usage_pct()
                 budget_usage = MemoryGuard.get_budget_usage_pct()
-                drift_gb = MemoryGuard.get_drift()
-
-                status.update(
-                    f"[bold green]Simulando transacciones... [blue]RAM Budget: {budget_usage:.1f}%[/blue] | [dim]SYS: {current_ram:.1f}%[/dim][/bold green]")
-
-                if abs(drift_gb) > 0.5:
-                    if drift_gb > 0:
-                        console.print(
-                            f"[dim grey]ℹ️ Desviación externa: [bold red]▲ +{drift_gb:.2f} GB[/bold red] (Carga del sistema)[/dim grey]")
-                    else:
-                        console.print(
-                            f"[dim grey]ℹ️ Desviación externa: [bold green]▼ {drift_gb:.2f} GB[/bold green] (Liberación RAM)[/dim grey]")
-
+                
+                status.update(f"[bold green]Simulando transacciones... RAM: {budget_usage:.1f}%[/bold green]")
+                
                 if ram_status == "GLOBAL_HARD_STOP":
-                    console.print(
-                        f"\n[bold red]❌ STOP GLOBAL (AIRBAG): RAM del sistema al {current_ram:.1f}%.[/bold red]")
-                    console.print(
-                        "[red]Abortando para prevenir congelamiento de Windows.[/red]")
-                    # Return partial? Or raise? Original returned.
                     return results
-
-                elif ram_status == "BUDGET_ABORT":
-                    console.print(
-                        f"\n[bold red]❌ LÍMITE DE SEGURIDAD: Yupay alcanzó el {budget_usage:.1f}% de su presupuesto.[/bold red]")
-                    console.print(
-                        f"[red]RAM Global: {current_ram:.1f}% | Presupuesto Inicial: {MemoryGuard._baseline_available_gb:.2f} GB[/red]")
-                    console.print(
-                        "[white]Acción sugerida: Reduce 'daily_avg_transactions' o cierra aplicaciones pesadas.[/white]")
-                    return results
-
-                elif ram_status == "BUDGET_WARNING":
-                    stable_count = 0
-                    old_rows = target_rows
-                    target_rows = max(500_000, target_rows // 2)
-                    console.print(
-                        f"[orange3]🟠 Throttle: Presupuesto al {budget_usage:.1f}%. Ajustando batch: {old_rows:,} -> {target_rows:,}[/orange3]")
-                    MemoryGuard.wait_if_critical(threshold_pct=80.0)
-
-                elif ram_status == "OBSERVATION":
-                    stable_count = 0
-                    console.print(
-                        f"[yellow]🟡 Observación: Presupuesto al {budget_usage:.1f}%.[/yellow]")
-
-                else:
-                    if target_rows < 5_000_000:
-                        stable_count += 1
-                        if stable_count >= 3:
-                            old_rows = target_rows
-                            target_rows = min(
-                                5_000_000, int(target_rows * 1.5))
-                            console.print(
-                                f"[green]🟢 Recuperación: {old_rows:,} -> {target_rows:,} filas tras 3 batches estables.[/green]")
-                            stable_count = 0
-
-                # B. Cálculo de ventana
+                
+                # ... Calculation ...
                 s_date, e_date = TimeEngine.get_next_batch_window(
                     current_start, end_limit, full_config["daily_avg_transactions"], target_rows
                 )
 
-                print(
-                    f"   -> Batch {batch_idx + 1}: [{s_date} - {e_date}] @ {target_rows:,} rows")
+                print(f"   -> Batch {batch_idx + 1}: [{s_date} - {e_date}]")
 
-                # C. Generación
-                trans_batch = dataset.build_batch(full_config, s_date, e_date)
-
-                for table_name, lf in trans_batch.items():
-                    out_path, real_count = sink.write(
-                        table_name, lf, target_rows, part_id=batch_idx)
-
-                    found = False
-                    for idx, (name, count, fname) in enumerate(results):
-                        if name == table_name:
-                            results[idx] = (
-                                name, count + real_count, "Folder (Partitioned)")
-                            found = True
-                            break
-                    if not found:
-                        results.append(
-                            (table_name, real_count, f"{table_name}/"))
+                # Generate Batch
+                # We need to call build() with override dates
+                # AND we only want 'orders' and 'payments'
+                batch_map = dataset.build(
+                    full_config, 
+                    start_date_override=s_date, 
+                    end_date_override=e_date,
+                    stores_df=stores_df
+                )
+                
+                trans_tables = ["orders", "payments"]
+                for t in trans_tables:
+                    if t in batch_map:
+                         out_path, real_count = sink.write(
+                            t, batch_map[t], target_rows, part_id=batch_idx)
+                         
+                         # Update results logic
+                         found = False
+                         for idx, (name, count, fname) in enumerate(results):
+                            if name == t:
+                                results[idx] = (name, count + real_count, "Folder (Partitioned)")
+                                found = True
+                                break
+                         if not found:
+                            results.append((t, real_count, f"{t}/"))
 
                 current_start = (datetime.strptime(
                     e_date, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")

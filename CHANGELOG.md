@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0] - 2026-02-09
+### Added
+- **Store Dimension**: Added `dim_stores` representing physical locations (City, Format, Size).
+- **Geographic Preference**: Customers are now assigned a `preferred_store_id` matching their city.
+- **POS Logic**: Orders now track `store_id`, `pos_id`, and `cashier_id` simulating real retail operations.
+- **Store Generator**: New generator class handling weighting by city (e.g., Lima has 50% of stores).
+
 ## [1.1.0] - 2026-02-03
 ### Added
 - **Deep Realism**: Continuous Cosine Seasonality, Payday/Weekend effects, and Daily Jitter.

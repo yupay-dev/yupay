@@ -13,7 +13,10 @@ class SalesDataset(BaseDataset):
     Genera Clientes, Productos y Órdenes relacionadas.
     """
 
-    def build(self, config: dict, rows_map: dict[str, int] = None, start_date_override: str = None, end_date_override: str = None) -> dict[str, pl.LazyFrame]:
+    def build(self, config: dict, rows_map: dict[str, int] = None, 
+              start_date_override: str = None, end_date_override: str = None,
+              stores_df: pl.DataFrame = None) -> dict[str, pl.LazyFrame]:
+        
         # 0. Configuración Temporal y Volumetría
         start_date = start_date_override or config.get(
             "start_date", "2024-01-01")
@@ -26,23 +29,14 @@ class SalesDataset(BaseDataset):
             "summer": [1, 2, 3, 12],
             "winter": [6, 7, 8, 9]
         })
-        # Default fallback map if config is missing (South Hemisphere)
-        summer_months = set(season_map.get("summer", [1, 2, 3, 12]))
-        winter_months = set(season_map.get("winter", [6, 7, 8, 9]))
-
-        weights_cfg = seasonality_cfg.get("weights", {
-            "summer_months": {"summer": 0.6, "winter": 0.05, "all_year": 0.35},
-            "winter_months": {"summer": 0.1, "winter": 0.5, "all_year": 0.4},
-            "transition_months": {"summer": 0.25, "winter": 0.25, "all_year": 0.5},
-        })
-
+        
         # Entities
         n_customers = config.get("domains", {}).get(
             "sales", {}).get("customers_base", 10000)
         n_products = config.get("domains", {}).get(
             "sales", {}).get("products_catalog_size", 500)
 
-        # 1. Generar Catálogos (Materializamos Productos para facilitar sampling)
+        # 1. Generar Catálogos
         cust_gen = CustomerGenerator(config.get(
             "entities", {}).get("customers", {}))
 
@@ -51,8 +45,10 @@ class SalesDataset(BaseDataset):
         prod_config["catalog"] = config.get("catalogs", {}).get("products", {})
         prod_gen = ProductGenerator(prod_config)
 
+        # Pass stores to customer gen if available
         customers_lazy = cust_gen.generate(
-            n_customers).with_row_index("cust_idx")
+            n_customers, stores_df=stores_df).with_row_index("cust_idx")
+            
         products_lazy = prod_gen.generate(
             n_products).with_row_index("prod_idx")
 
@@ -68,15 +64,11 @@ class SalesDataset(BaseDataset):
             "product_id"].to_list()
 
         # Fallback if empty lists (avoid crash)
-        if not ids_summer:
-            ids_summer = [0]
-        if not ids_winter:
-            ids_winter = [0]
-        if not ids_allyear:
-            ids_allyear = range(n_products)  # Use all if tag missing
+        if not ids_summer: ids_summer = [0]
+        if not ids_winter: ids_winter = [0]
+        if not ids_allyear: ids_allyear = range(n_products)
 
         # 2. Generar Órdenes (Temporal Engine Strategy)
-        rnd = Randomizer(seed=config.get("seed", 42) + 2)
         time_eng = TimeEngine(start_date, end_date, daily_avg)
         chaos_eng = EntropyManager(config)
 
@@ -84,8 +76,6 @@ class SalesDataset(BaseDataset):
         orders_lf = orders_lf.with_row_index("order_idx")
 
         # 3. Lógica Estacional: Asignar Tag Target -> Asignar Product ID
-        # Paso 3.1: Determinar el "Target Tag" (Summer/Winter/AllYear) - Lógica Orgánica (Ondas)
-        # Constants
         VAL_TWO_PI = 6.28318530718
         VAL_PEAK_SUMMER = 45
 
@@ -96,24 +86,20 @@ class SalesDataset(BaseDataset):
             pl.col("order_idx").hash(100).mod(1000).cast(pl.Float32).truediv(
                 1000.0).alias("probs_rnd"),  # Roll de dado 0-1
 
-            # Base logic columns (Restored)
+            # Base logic columns
             pl.col("order_idx").cast(pl.UInt32).alias("order_id"),
             pl.col("event_date").cast(pl.Date).alias("order_date"),
         ])
 
-        # Calcular Onda Estacional con "Chaos" (Shift Anual + Ruido)
+        # Calcular Onda Estacional con "Chaos"
         orders_lf = orders_lf.with_columns([
-            # Yearly Shift: +/- 15 dias de desfase cada año
             (pl.col("year").hash(2024).mod(31).cast(
                 pl.Int32) - 15).alias("yearly_shift"),
-
-            # Daily Noise: (-0.1 a +0.1)
             (pl.col("order_idx").hash(999).mod(200).cast(
                 pl.Float32).truediv(1000.0) - 0.1).alias("daily_noise")
         ])
 
         orders_lf = orders_lf.with_columns([
-            # Normalized Day: (doy + shift - peak)
             (pl.col("doy") + pl.col("yearly_shift") -
              pl.lit(VAL_PEAK_SUMMER)).alias("shifted_doy")
         ])
@@ -135,27 +121,19 @@ class SalesDataset(BaseDataset):
             (0.05 + 0.65 * pl.col("seasonal_intensity")).alias("p_summer"),
             (0.05 + 0.55 * (1.0 - pl.col("seasonal_intensity"))).alias("p_winter")
         ])
-
-        # Weekend Bias for Summer Products (BBQ, Beer, etc.)
-        # Weekday: Mon=1, Sun=7. Polars doy -> need weekday.
-        # We calculated 'doy'. We need weekday from event_date.
-        # day_of_week is 1-7 in Polars or 0-6? dt.weekday() is 1-7 (Mon-Sun).
+        
         orders_lf = orders_lf.with_columns(
             pl.col("event_date").dt.weekday().alias("weekday")
         )
 
-        # Adjust p_summer: If Sat(6) or Sun(7), boost by 20%
         orders_lf = orders_lf.with_columns([
             pl.when(pl.col("weekday") >= 6)
             .then(pl.col("p_summer") * 1.2)
             .otherwise(pl.col("p_summer"))
-            .clip(0.0, 1.0)  # Ensure valid prob
+            .clip(0.0, 1.0)
             .alias("p_summer")
         ])
 
-        # Assign Target Tag based on thresholds
-        # Threshold 1: p_summer
-        # Threshold 2: p_summer + p_winter
         orders_lf = orders_lf.with_columns(
             pl.when(pl.col("probs_rnd") < pl.col(
                 "p_summer")).then(pl.lit("summer"))
@@ -164,10 +142,7 @@ class SalesDataset(BaseDataset):
             .alias("target_tag")
         )
 
-        # Paso 3.2: Asignar IDs reales - OPTIMIZED (Join Strategy)
-        # Avoid map_elements (slow python UDF). Use Modulo + Join.
-
-        # Helper to create lookup tables
+        # Paso 3.2: Asignar IDs reales
         def make_lookup(ids_list, name_suffix):
             return pl.DataFrame({
                 f"idx_{name_suffix}": pl.int_range(0, len(ids_list), dtype=pl.UInt32, eager=True),
@@ -178,66 +153,44 @@ class SalesDataset(BaseDataset):
         lookup_winter = make_lookup(ids_winter, "winter")
         lookup_allyear = make_lookup(ids_allyear, "allyear")
 
-        # Calculate Indices in Orders
         len_summer = len(ids_summer)
         len_winter = len(ids_winter)
         len_allyear = len(ids_allyear)
 
         orders_lf = orders_lf.with_columns([
-            (pl.col("order_idx") % len_summer).cast(
-                pl.UInt32).alias("idx_summer"),
-            ((pl.col("order_idx") + 1) %
-             len_winter).cast(pl.UInt32).alias("idx_winter"),
-            ((pl.col("order_idx") + 2) %
-             len_allyear).cast(pl.UInt32).alias("idx_allyear"),
+            (pl.col("order_idx") % len_summer).cast(pl.UInt32).alias("idx_summer"),
+            ((pl.col("order_idx") + 1) % len_winter).cast(pl.UInt32).alias("idx_winter"),
+            ((pl.col("order_idx") + 2) % len_allyear).cast(pl.UInt32).alias("idx_allyear"),
         ])
 
-        # Join to get Candidates
-        # Valid joins because indices are mathematically guaranteed to be in range
         orders_lf = orders_lf.join(lookup_summer, on="idx_summer", how="left")
         orders_lf = orders_lf.join(lookup_winter, on="idx_winter", how="left")
-        orders_lf = orders_lf.join(
-            lookup_allyear, on="idx_allyear", how="left")
+        orders_lf = orders_lf.join(lookup_allyear, on="idx_allyear", how="left")
 
         orders_lf = orders_lf.with_columns(
-            pl.when(pl.col("target_tag") == "summer").then(
-                pl.col("cand_summer"))
+            pl.when(pl.col("target_tag") == "summer").then(pl.col("cand_summer"))
             .when(pl.col("target_tag") == "winter").then(pl.col("cand_winter"))
             .otherwise(pl.col("cand_allyear"))
             .alias("product_id")
         )
 
-        # Drop temp columns to keep plan clean
         orders_lf = orders_lf.drop(["idx_summer", "idx_winter", "idx_allyear",
                                     "cand_summer", "cand_winter", "cand_allyear"])
 
         # 3.3 Customer Assignment (Pareto 80/20 Distribution)
-        # Logic: 80% of orders assigned to first 20% of IDs (VIPs)
-        #        20% of orders assigned to remaining 80% IDs (Casuals)
-
-        # Calculate thresholds
         cutoff_vip_id = int(n_customers * 0.2)
 
-        # 1. Random float for Pareto decision (Is this a VIP order?)
-        # 2. Random Index within range
         orders_lf = orders_lf.with_columns([
-            # pareto_rnd: 0-1
             pl.col("order_idx").hash(777).mod(1000).cast(
                 pl.Float32).truediv(1000.0).alias("pareto_rnd"),
-
-            # random index for VIP (0 to cutoff)
-            # rnd.random_index_expr(cutoff_vip_id, "order_idx") replacement:
             (pl.col("order_idx").hash(101).mod(
                 cutoff_vip_id).cast(pl.UInt32)).alias("idx_vip"),
-
-            # random index for Casual (cutoff to N)
-            # Explicit hash using order_idx (integer) to avoid float issues
             (pl.lit(cutoff_vip_id) + pl.col("order_idx").hash(202).mod(n_customers -
              cutoff_vip_id).cast(pl.UInt32)).alias("idx_casual")
         ])
 
         orders_lf = orders_lf.with_columns(
-            pl.when(pl.col("pareto_rnd") < 0.80)  # 80% prob -> VIP
+            pl.when(pl.col("pareto_rnd") < 0.80)
             .then(pl.col("idx_vip"))
             .otherwise(pl.col("idx_casual"))
             .alias("cust_idx")
@@ -252,35 +205,60 @@ class SalesDataset(BaseDataset):
             )).alias("quantity")
         )
 
-        # 4. RAW EXPORT DENORMALIZATION (Vuelco de ERP Sucio)
+        # 4. RAW EXPORT DENORMALIZATION
+        orders_flat = orders_lf.join(products_lazy, on="product_id", how="left")
 
-        # Join Products (Full Info)
-        # Note: We join on product_id.
-        orders_flat = orders_lf.join(
-            products_lazy,
-            on="product_id",
-            how="left"
-        )
+        # JOIN Customers to get preferred store
+        # Note: customers_lazy has 'preferred_store_id' if stores_df was passed
+        orders_flat = orders_flat.join(customers_lazy, on="cust_idx", how="left")
 
-        # Join Customers (Full Info)
-        # Note: Customer LazyFrame needs a customer_id column?
-        # Actually customer_lazy created in build() has row index "cust_idx".
-        # We can join on cust_idx.
+        # 4.1 Store Assignment Logic
+        if "preferred_store_id" in orders_flat.collect_schema().names():
+            # If we have stores, use preference logic
+            # 80% use preferred, 20% random (simulate travel or other store in city) or just random overall?
+            # Let's keep it simple: 90% Preferred, 10% Other.
+            
+            # To pick "Other", we need a valid store_id. 
+            # We can pick a random store_id from the valid range [1, N_STORES].
+            # We need to know max_store_id or have the frame.
+            if stores_df is not None:
+                max_store_id = stores_df.height
+                
+                orders_flat = orders_flat.with_columns([
+                     pl.col("order_idx").hash(888).mod(1000).cast(pl.Float32).truediv(1000.0).alias("store_rnd"),
+                     (pl.col("order_idx").hash(999).mod(max_store_id) + 1).cast(pl.UInt32).alias("random_store_id")
+                ])
+                
+                orders_flat = orders_flat.with_columns(
+                    pl.when(pl.col("store_rnd") < 0.90)
+                    .then(pl.col("preferred_store_id"))
+                    .otherwise(pl.col("random_store_id"))
+                    .alias("store_id")
+                )
+                 
+                # Fill nulls (if any customer has no preference) with random
+                orders_flat = orders_flat.with_columns(
+                    pl.col("store_id").fill_null(pl.col("random_store_id"))
+                )
 
-        # Debug Schema before final join
-        # print("DEBUG: orders_lf Schema before final joins:")
-        # print(orders_lf.schema)
-
-        orders_flat = orders_flat.join(
-            customers_lazy,
-            on="cust_idx",
-            how="left"
-        )
+                # Generate POS ID and Cashier
+                orders_flat = orders_flat.with_columns([
+                    # POS: StoreID-BoxNumber (1..8)
+                    (pl.col("store_id").cast(pl.String) + "-" + 
+                     (pl.col("order_idx").hash(11).mod(8) + 1).cast(pl.String)).alias("pos_id"),
+                     
+                    # Cashier: StoreID-User (1..20)
+                    (pl.col("store_id").cast(pl.String) + "-" + 
+                     (pl.col("order_idx").hash(22).mod(20) + 1).cast(pl.String)).alias("cashier_id")
+                ])
+            else:
+                 # Should not happen in this phase if wired correctly
+                 orders_flat = orders_flat.with_columns(pl.lit(1).alias("store_id"))
+        else:
+             orders_flat = orders_flat.with_columns(pl.lit(1).alias("store_id"))
 
         # Calculate Amounts (Total)
-        # Dynamic Price: +/- 5% variance
         orders_flat = orders_flat.with_columns([
-            # Price Factor 0.95 to 1.05
             ((pl.col("order_idx").hash(555).mod(100).cast(
                 pl.Float32) / 1000.0) + 0.95).alias("price_factor")
         ])
@@ -290,47 +268,46 @@ class SalesDataset(BaseDataset):
              ).round(2).alias("total_amount")
         ])
 
-        # Add String Noise (Dirty Data)
+        # Add String Noise
         orders_flat = chaos_eng.inject_string_noise(
             orders_flat, ["product_name", "first_name"])
-        # orders_flat = chaos_eng.inject_nulls(
-        #     orders_flat, ["seasonal_tag"])  # Sometimes tag is missing
 
         # Create final Customer mix name
         orders_flat = orders_flat.with_columns(
             (pl.col("first_name") + " " + pl.col("last_name")).alias("customer_name")
         )
 
-        # Sort by Date (Chronological Log)
         orders_flat = orders_flat.sort("order_date")
 
-        # SELECT FINAL COLUMNS (Massive Flat Table)
-        final_table = orders_flat.select([
+        # SELECT FINAL COLUMNS
+        # Define columns to select (robust check if they exist)
+        cols = [
             "order_id",
             "order_date",
-
-            # Customer Info (Redundant)
             "customer_id",
             "customer_name",
             "email",
             "phone_number",
-            "city",   # From customer gen
-
-            # Product Info (Redundant)
+            "city",
             "product_id",
             "category",
             "subtype",
             "brand",
             "product_name",
             "seasonal_tag",
-            "base_price",  # Unit Price
-
-            # Transaction Info
+            "base_price",
             "quantity",
             "total_amount"
-        ])
+        ]
+        
+        # Add store cols if exist
+        avail_cols = orders_flat.collect_schema().names()
+        if "store_id" in avail_cols:
+            cols.extend(["store_id", "pos_id", "cashier_id"])
+            
+        final_table = orders_flat.select(cols)
 
-        # 5. Pagos (Payments) - Restored Logic
+        # 5. Pagos (Payments)
         methods = ["Credit Card", "Debit Card",
                    "PayPal", "Bank Transfer", "Cash"]
 
