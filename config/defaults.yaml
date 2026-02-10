@@ -14,42 +14,36 @@ system:
   safety_buffer_gb: 5
 
 chaos:
-  # Chaos Levels Definition
-  # Levels: 
-  # - low:    Almost clean, minor inconsistencies.
-  # - medium: Realistic. Nulls, duplicates, standard human errors.
-  # - high:   Hostile. Broken FKs, time paradoxes, massive corruption.
+  enabled: true
+  seed: 42
   
-  default_level: "low"
-  global_seed: 42
-  
-  levels:
-    low:
-      null_probability: 0.01
-      duplicate_probability: 0.001
-      orphan_probability: 0.0
-      latency_hours_max: 24
-      string_noise:
-        casing_probability: 0.0
-        spaces_probability: 0.0
-      
-    medium:
-      null_probability: 0.05
-      duplicate_probability: 0.02
-      orphan_probability: 0.01
-      latency_hours_max: 72
-      string_noise:
-        casing_probability: 0.1 # 10% mixed/bad casing
-        spaces_probability: 0.1 # 10% trailing/leading spaces
-      
-    high:
-      null_probability: 0.15
-      duplicate_probability: 0.10
-      orphan_probability: 0.05
-      latency_hours_max: 168 # 1 week
-      string_noise:
-        casing_probability: 0.4
-        spaces_probability: 0.4
+  # Fine-grained rules per table
+  rules:
+    orders:
+      duplication_rate: 0.01 # 1% duplication
+      columns:
+        store_id:
+          nulls: 0.02 # 2% missing store_id
+        total_amount:
+          negatives: 0.001 # 0.1% negative amounts
+          outliers:
+            rate: 0.001 # 0.1% outliers
+            factor: 100.0 # 100x price
+        order_date:
+          nulls: 0.005
+          
+    customers:
+      duplication_rate: 0.005
+      columns:
+        email:
+          text_corruption: 0.05 # 5% malformed emails
+        first_name:
+          text_corruption: 0.05 # 5% casing/padding issues
+          
+    products:
+      columns:
+        category:
+          nulls: 0.01
 
 domains:
   sales:

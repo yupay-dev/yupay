@@ -2,7 +2,7 @@
 import polars as pl
 from typing import Dict, Any
 
-from yupay.domains.inventory.movements import InventoryDataset
+from yupay.domains.sales.inventory.movements import InventoryDataset
 from yupay.domains.sales.orders import SalesDataset
 from yupay.domains.sales.customers import CustomerGenerator
 from yupay.domains.sales.products import ProductGenerator

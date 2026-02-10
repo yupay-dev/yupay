@@ -21,7 +21,8 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/).
 
 | Version | Date       | Status   | Codename |
 | :------ | :--------- | :------- | :------- |
-| **v1.3.1** | 2026-02-09 | **LATEST STABLE** | Event Ramp-ups |
+| **v1.3.1** | 2026-02-09 | Manuel Vasquez | Seasonality Refinements (Ramp-ups) |
+| v1.4.0  | 2026-02-09 | Manuel Vasquez | Chaos Engine & Domain Refactoring |
 | v1.3.0  | 2026-02-09 | Stable   | Advanced Seasonality |
 | v1.2.0  | 2026-02-09 | Stable   | Physical Stores |
 | v1.1.0 | 2026-02-03 | Stable | Deep Realism |

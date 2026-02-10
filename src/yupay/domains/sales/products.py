@@ -81,10 +81,15 @@ class ProductGenerator(BaseGenerator):
             "seasonal_tag",
             "base_price"
         ], orient="row")
-
+        
         df = df.with_columns(
             product_id=pl.int_range(0, rows, dtype=pl.UInt32, eager=True),
             base_price=pl.col("base_price").cast(pl.Decimal(10, 2))
         )
 
-        return df.lazy()
+        # Chaos Injection
+        from yupay.core.chaos import ChaosEngine
+        chaos = ChaosEngine(self.config)
+        df_eager = chaos.apply(df, "products")
+
+        return df_eager.lazy()

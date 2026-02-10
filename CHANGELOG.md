@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.4.0] - 2026-02-09
+### Added
+- **Chaos Engine**: Configurable anomaly injection (Nulls, Duplicates, Outliers, Text Corruption) for Orders, Customers, and Products.
+- **Verification Tool**: `verify_chaos.py` to audit data quality issues.
+
+### Changed
+- **Refactor**: Moved `inventory` domain to `src/yupay/domains/sales/inventory` to reflect domain dependency.
+- **Configuration**: Enhanced `defaults.yaml` with detailed `chaos` rules.
+
 ## [1.3.1] - 2026-02-09
 ### Changed
 - **Event Ramp-ups**: Replaced single-day event shocks with gradual ramp-up curves for realistic demand.

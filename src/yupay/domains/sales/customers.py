@@ -93,6 +93,10 @@ class CustomerGenerator(BaseGenerator):
             # 4. Join back to get StoreID
             target_stores = stores_ranked.select(["city", "store_idx_in_city", "store_id"])
             
+            # Lazy join logic (Store assignment)
+            if isinstance(target_stores, pl.LazyFrame):
+                 target_stores = target_stores.collect()
+
             df = df.join(
                 target_stores, 
                 left_on=["city", "target_store_idx"], 
@@ -100,4 +104,11 @@ class CustomerGenerator(BaseGenerator):
                 how="left"
             ).rename({"store_id": "preferred_store_id"}).drop(["city_store_count", "target_store_idx"])
 
-        return df.lazy()
+        # Chaos Injection
+        from yupay.core.chaos import ChaosEngine
+        chaos = ChaosEngine(self.config)
+        
+        # Apply chaos (df is already Eager)
+        df_eager = chaos.apply(df, "customers")
+        
+        return df_eager.lazy()

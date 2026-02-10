@@ -1,7 +1,7 @@
 
 import polars as pl
 from yupay.core.dataset import BaseDataset
-from yupay.domains.inventory.suppliers import SupplierGenerator
+from yupay.domains.sales.inventory.suppliers import SupplierGenerator
 from yupay.domains.sales.products import ProductGenerator
 from yupay.core.temporal import TimeEngine
 from yupay.core.random import Randomizer

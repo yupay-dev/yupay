@@ -39,12 +39,17 @@ class SalesDataset(BaseDataset):
             "sales", {}).get("products_catalog_size", 500)
 
         # 1. Generar Catálogos
-        cust_gen = CustomerGenerator(config.get(
-            "entities", {}).get("customers", {}))
+        # 1. Generar Catálogos
+        cust_config = config.get("entities", {}).get("customers", {}).copy()
+        cust_config["chaos"] = config.get("chaos", {})
+        cust_config["seed"] = config.get("chaos", {}).get("seed", 42)
+        cust_gen = CustomerGenerator(cust_config)
 
         # Inject catalog into product config
-        prod_config = config.get("entities", {}).get("products", {})
+        prod_config = config.get("entities", {}).get("products", {}).copy()
         prod_config["catalog"] = config.get("catalogs", {}).get("products", {})
+        prod_config["chaos"] = config.get("chaos", {})
+        prod_config["seed"] = config.get("chaos", {}).get("seed", 42)
         prod_gen = ProductGenerator(prod_config)
 
         # Pass stores to customer gen if available
@@ -420,9 +425,29 @@ class SalesDataset(BaseDataset):
             "payment_id", "order_id", "payment_date", "payment_method", "total_amount", "status"
         ])
 
+        # 6. Chaos Injection
+        from yupay.core.chaos import ChaosEngine
+        chaos = ChaosEngine(config)
+        
+        # Apply to Orders (Must be Eager for Chaos)
+        if isinstance(final_table, pl.LazyFrame):
+            orders_eager = final_table.collect()
+        else:
+            orders_eager = final_table
+            
+        orders_final = chaos.apply(orders_eager, "orders")
+        
+        # Apply to Payments
+        if isinstance(payments_enriched, pl.LazyFrame):
+             payments_eager = payments_enriched.collect()
+        else:
+             payments_eager = payments_enriched
+
+        payments_final = chaos.apply(payments_eager, "payments")
+
         return {
             "customers": customers_lazy.drop("cust_idx"),
             "products": products_lazy.drop("prod_idx"),
-            "orders": final_table,
-            "payments": payments_enriched
+            "orders": orders_final.lazy(), # Re-lazy for consistency, though currently eager due to join
+            "payments": payments_final.lazy()
         }
