@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.1] - 2026-02-09
+### Changed
+- **Event Ramp-ups**: Replaced single-day event shocks with gradual ramp-up curves for realistic demand.
+  - **Christmas**: Ramp starts Nov 20, peaking Dec 24.
+  - **Mother's Day**: Ramp starts 1 week prior.
+  - **Fiestas Patrias**: Ramp starts Jul 15 (Gratificaciones).
+  - **Cyber Days**: Extended to 3-day events (Jul/Nov).
+
 ## [1.3.0] - 2026-02-09
 ### Added
 - **Composite Time Engine**: Demand now driven by `Trend * Seasonality * Weekly * Shock`.

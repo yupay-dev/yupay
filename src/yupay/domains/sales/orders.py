@@ -88,30 +88,54 @@ class SalesDataset(BaseDataset):
             (12, 31): 1.5,  # New Year's Eve
         }
         
-        # Dynamic Special Dates
+        
+        # Dynamic Special Dates with Ramp-up
         special_dates = {}
         s_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
         e_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
         
+        def add_ramp(dates_dict, target_date, days_before, start_factor, peak_factor):
+            """Generates a linear ramp-up to a target date."""
+            slope = (peak_factor - start_factor) / days_before
+            for i in range(days_before + 1):
+                day = target_date - timedelta(days=days_before - i)
+                factor = start_factor + (slope * i)
+                # Keep the highest factor if overlap
+                current = dates_dict.get(day, 0.0)
+                dates_dict[day] = max(current, factor)
+
         for year in range(s_date_obj.year, e_date_obj.year + 1):
-            # Mother's Day: 2nd Sunday of May
-            # Find first Sunday
+            # 1. Mother's Day: 2nd Sunday of May
             may_1 = date(year, 5, 1)
             first_sunday = 1 + (6 - may_1.weekday()) 
             second_sunday = first_sunday + 7
             mothers_day = date(year, 5, second_sunday)
-            special_dates[mothers_day] = 2.5
             
-            # Cyber Days (Simulated mid-July)
-            special_dates[date(year, 7, 15)] = 1.6
-            special_dates[date(year, 7, 16)] = 1.6
-            special_dates[date(year, 7, 17)] = 1.6
+            # Ramp-up 7 days before (1.1x -> 3.0x)
+            add_ramp(special_dates, mothers_day, 7, 1.1, 3.0)
             
-            # Christmas Ramp Up
-            special_dates[date(year, 12, 21)] = 1.6
-            special_dates[date(year, 12, 22)] = 2.0
-            special_dates[date(year, 12, 23)] = 2.5
-            special_dates[date(year, 12, 24)] = 3.5 # Peak Panic Buying
+            # 2. Fiestas Patrias: July 28-29
+            # Ramp-up from July 15 (Gratificaciones) -> July 28
+            fpatrias = date(year, 7, 28)
+            add_ramp(special_dates, fpatrias, 13, 1.2, 2.5)
+            special_dates[date(year, 7, 29)] = 2.5 # Day 2 also high
+            
+            # 3. Cyber Days (Simulated) - 3 Days Flat High
+            # Mid-July (15-17)
+            for d in [date(year, 7, 15), date(year, 7, 16), date(year, 7, 17)]:
+                 special_dates[d] = max(special_dates.get(d, 0), 1.8)
+            
+            # Mid-Nov (14-16)
+            for d in [date(year, 11, 14), date(year, 11, 15), date(year, 11, 16)]:
+                 special_dates[d] = max(special_dates.get(d, 0), 1.8)
+
+            # 4. Christmas: Ramp-up from Nov 20 -> Dec 24
+            xmas_eve = date(year, 12, 24)
+            # Long ramp from Nov 20 (approx 34 days)
+            # Nov 20 (1.1x) -> Dec 24 (3.5x)
+            nov_20 = date(year, 11, 20)
+            days_ramp = (xmas_eve - nov_20).days
+            add_ramp(special_dates, xmas_eve, days_ramp, 1.1, 3.5)
 
         retail_profile = TimeProfile(
             name="Retail Peru",
