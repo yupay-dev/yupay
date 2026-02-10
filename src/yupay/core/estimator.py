@@ -58,12 +58,15 @@ class SizeEstimator:
 
         # 3. Estimate Size
         # Formula: Days * DailyVol * AvgRowBytes * Factor
+        # Formula: Days * DailyVol * AvgRowBytes * Factor
         # Get column weights from defaults based on DOMAIN
-        weights = self.defaults["domains"].get(
-            domain, {}).get("estimation_weights", {})
+        # We use 'config' because it has the merged domain defaults
+        domains_config = self.config.get("domains", {})
+        weights = domains_config.get(domain, {}).get("estimation_weights", {})
+        
         if not weights:
             # Fallback to sales if domain not found or generic
-            weights = self.defaults["domains"]["sales"]["estimation_weights"]
+            weights = domains_config.get("sales", {}).get("estimation_weights", {})
 
         # Calculate approximate bytes per transaction
         if domain == "sales":

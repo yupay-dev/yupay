@@ -9,6 +9,13 @@ domains:
   sales:
     customers_base: 50000
     products_catalog_size: 500
+    estimation_weights:
+      customers: 50
+      products: 40
+      orders: 20
+      payments: 30
+      suppliers: 50
+      stock_movements: 25
 
 
 entities:
@@ -30,3 +37,32 @@ entities:
       "Debit Card": 0.3
       "Cash": 0.1
       "Transfer": 0.1
+
+chaos:
+  # Fine-grained rules per table (Sales Domain Specific)
+  rules:
+    orders:
+      duplication_rate: 0.01 # 1% duplication
+      columns:
+        store_id:
+          nulls: 0.02 # 2% missing store_id
+        total_amount:
+          negatives: 0.001 # 0.1% negative amounts
+          outliers:
+            rate: 0.001 # 0.1% outliers
+            factor: 100.0 # 100x price
+        order_date:
+          nulls: 0.005
+          
+    customers:
+      duplication_rate: 0.005
+      columns:
+        email:
+          text_corruption: 0.05 # 5% malformed emails
+        first_name:
+          text_corruption: 0.05 # 5% casing/padding issues
+          
+    products:
+      columns:
+        category:
+          nulls: 0.01

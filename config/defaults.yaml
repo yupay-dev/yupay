@@ -16,45 +16,6 @@ system:
 chaos:
   enabled: true
   seed: 42
-  
-  # Fine-grained rules per table
-  rules:
-    orders:
-      duplication_rate: 0.01 # 1% duplication
-      columns:
-        store_id:
-          nulls: 0.02 # 2% missing store_id
-        total_amount:
-          negatives: 0.001 # 0.1% negative amounts
-          outliers:
-            rate: 0.001 # 0.1% outliers
-            factor: 100.0 # 100x price
-        order_date:
-          nulls: 0.005
-          
-    customers:
-      duplication_rate: 0.005
-      columns:
-        email:
-          text_corruption: 0.05 # 5% malformed emails
-        first_name:
-          text_corruption: 0.05 # 5% casing/padding issues
-          
-    products:
-      columns:
-        category:
-          nulls: 0.01
 
-domains:
-  sales:
-    # Default column weights for estimation (bytes)
-    # Based on Parquet efficient storage
-    estimation_weights:
-      customers: 50
-      products: 40
-      orders: 20
-      payments: 30
-      suppliers: 50
-      stock_movements: 25
 
 
